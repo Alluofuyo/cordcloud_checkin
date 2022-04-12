@@ -1,0 +1,5 @@
+venv
+venv/**
+cookies.txt
+.idea
+.idea/**
