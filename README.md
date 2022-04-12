@@ -2,12 +2,25 @@
 
 This is a script that will automatically check in your CordCloud account and get the traffic every day.
 
-### Usage
+`Usage`
+---
+You have two methods to use this script.
+1. Run the script in your machine.
 
-1. Fork this repository.
-2. Set the username and password secret in the Github repo settings. (
-   see [here](https://docs.github.com/en/actions/security-guides/encrypted-secrets))
-3. Set the github action and specify the time in the workflow config file.
-~~~
+   `python AutoCheckIn.py --username=<username> --password=<password> [--keep-cookie]`
+   
+   `username`: Your CordCloud username.Required.
 
-~~~
+   `password`: Your CordCloud password.Required.
+
+   `keep-cookie`: If you want to keep the cookie file, you can use this option.
+2. Run the script in Github Actions.(recommended)
+   First, fork this repository to your own repository.
+   Then update the cron time you want in you Github Actions workflow file.
+```yaml
+on:
+  schedule:
+    - cron: '0 16 * * *'
+```
+   And set the `USERNAME` and `PASSWORD` in the Github Actions secrets `Settings->Secrets->Actions->New repository secret`.
+   All done!
