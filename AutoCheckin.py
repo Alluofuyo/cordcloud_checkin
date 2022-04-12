@@ -1,7 +1,6 @@
 import argparse
 import json
 import os.path
-import sys
 
 import requests
 from requests.cookies import RequestsCookieJar
@@ -27,8 +26,8 @@ def login(email: str, passwd: str, code: str = "", remember_me: bool = False):
                              })
     response.encoding = "utf-8"
     result = response.json()
+    print(result)
     if result["ret"] == 1:
-        print(result["msg"])
         return response.cookies
     else:
         return None
@@ -55,10 +54,14 @@ def read_cookies():
 
 
 def check_cookies_expired(cookies: RequestsCookieJar):
+    if cookies is None:
+        return True
     response = requests.get("https://www.cordcloud.one/user", cookies=cookies)
     if response.status_code == 200:
+        print("Cookies are valid.")
         return False
     else:
+        print("Cookies are invalid.")
         return True
 
 
@@ -74,32 +77,33 @@ def checkin(cookies: RequestsCookieJar):
                              })
     response.encoding = "utf-8"
     result = response.json()
-    if result["ret"] == 1:
-        print(result)
-    else:
-        print(result)
+    print(result)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="CordCloud Checkin")
     parser.add_argument("-u", "--username", help="username", type=str)
     parser.add_argument("-p", "--password", help="password", type=str)
+    parser.add_argument("-k", "--keep-cookie", help="keep cookies", action="store_true", default=False)
     args = parser.parse_args()
     username = args.username
     password = args.password
+    keep_cookie = args.keep_cookie
     if username is None or password is None:
         print("Please input username and password.")
         exit(1)
     cks = None
-    if os.path.exists("cookies.txt"):
+
+    if keep_cookie and os.path.exists("cookies.txt"):
         cks = read_cookies()
-    if check_cookies_expired(cks) or cks is None:
+    if check_cookies_expired(cks):
         print("Cookies expired, login again.")
         for i in range(3):
             cks = login(username, password, "", True)
+            print("login success.")
             if cks is not None:
-                save_cookies(cks)
-                print("login success.")
+                if keep_cookie:
+                    save_cookies(cks)
                 checkin(cks)
                 break
             else:
