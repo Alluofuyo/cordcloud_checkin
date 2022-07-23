@@ -7,8 +7,10 @@ from requests.cookies import RequestsCookieJar
 from requests.utils import dict_from_cookiejar, cookiejar_from_dict
 
 
+cordcoud_url="https://www.cordcloud.us"
+
 def login(email: str, passwd: str, code: str = "", remember_me: bool = False):
-    response = requests.post("https://www.cordcloud.us/auth/login",
+    response = requests.post(cordcoud_url+"/auth/login",
                              data={
                                  "email": email,
                                  "passwd": passwd,
@@ -56,7 +58,7 @@ def read_cookies():
 def check_cookies_expired(cookies: RequestsCookieJar):
     if cookies is None:
         return True
-    response = requests.get("https://www.cordcloud.one/user", cookies=cookies)
+    response = requests.get(cordcoud_url+"/user", cookies=cookies)
     if response.status_code == 200:
         print("Cookies are valid.")
         return False
@@ -66,7 +68,7 @@ def check_cookies_expired(cookies: RequestsCookieJar):
 
 
 def checkin(cookies: RequestsCookieJar):
-    response = requests.post("https://www.cordcloud.one/user/checkin", cookies=cookies,
+    response = requests.post(cordcoud_url+"/user/checkin", cookies=cookies,
                              headers={
                                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
                                                "like Gecko) Chrome/100.0.4896.75 Safari/537.36 Edg/100.0.1185.36",
