@@ -8,7 +8,7 @@ from requests.utils import dict_from_cookiejar, cookiejar_from_dict
 
 
 def login(email: str, passwd: str, code: str = "", remember_me: bool = False):
-    response = requests.post("https://www.cordcloud.one/auth/login",
+    response = requests.post("https://www.cordcloud.us/auth/login",
                              data={
                                  "email": email,
                                  "passwd": passwd,
