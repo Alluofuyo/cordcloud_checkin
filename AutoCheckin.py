@@ -7,7 +7,7 @@ from requests.cookies import RequestsCookieJar
 from requests.utils import dict_from_cookiejar, cookiejar_from_dict
 
 
-cordcoud_url="https://www.cordcloud.us"
+cordcoud_url="https://www.cordc.net"
 
 def login(email: str, passwd: str, code: str = "", remember_me: bool = False):
     response = requests.post(cordcoud_url+"/auth/login",
