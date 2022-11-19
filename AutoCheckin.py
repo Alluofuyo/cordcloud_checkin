@@ -23,8 +23,8 @@ def login(email: str, passwd: str, code: str = "", remember_me: bool = False):
                                  "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
                                  "Accept": "application/json, text/javascript, */*; q=0.01",
                                  "X-Requested-With": "XMLHttpRequest",
-                                 "Origin": "https://www.cordcloud.one",
-                                 "Referer": "https://www.cordcloud.one/auth/login"
+                                 "Origin": f"https://{cordcoud_url}",
+                                 "Referer": f"https://{cordcoud_url}/auth/login"
                              })
     response.encoding = "utf-8"
     result = response.json()
@@ -74,8 +74,8 @@ def checkin(cookies: RequestsCookieJar):
                                                "like Gecko) Chrome/100.0.4896.75 Safari/537.36 Edg/100.0.1185.36",
                                  "Accept": "application/json, text/javascript, */*; q=0.01",
                                  "X-Requested-With": "XMLHttpRequest",
-                                 "Origin": "https://www.cordcloud.one",
-                                 "Referer": "https://www.cordcloud.one/user"
+                                 "Origin": f"https://{cordcoud_url}",
+                                 "Referer": f"https://{cordcoud_url}/user"
                              })
     response.encoding = "utf-8"
     result = response.json()
