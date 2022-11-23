@@ -34,4 +34,4 @@ jobs:
         PASSWORD: ${{secrets.PASSWORD}}
         COOKIE: ${{secrets.COOKIE}}
       run: |
-        python AutoCheckin.py --username=$USERNAME --password=$PASSWORD --cookie=$COOKIE
+        python AutoCheckin.py --username=$USERNAME --password=$PASSWORD --cookie="$COOKIE"
