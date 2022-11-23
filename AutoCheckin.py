@@ -22,7 +22,8 @@ def login(email: str, passwd: str, ck: str, code: str = "", remember_me: bool = 
                                  "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
                                  "Accept": "application/json, text/javascript, */*; q=0.01",
                                  "Referer": f"{cordcoud_url}/auth/login",
-                             }, cookies={ck.split("=")[0]: ck.split("=")[1]})
+                                 "Cookie": ck
+                             })
     response.encoding = "utf-8"
     print(response.request.headers)
     print(response.headers)
