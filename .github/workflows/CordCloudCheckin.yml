@@ -34,6 +34,7 @@ jobs:
       env: 
         USERNAME: ${{secrets.USERNAME}}
         PASSWORD: ${{secrets.PASSWORD}}
+        COOKIE: ${{secrets.COOKIE}}
       run: |
-        python AutoCheckin.py --username=$USERNAME --password=$PASSWORD
+        python AutoCheckin.py --username=$USERNAME --password=$PASSWORD --cookie=$COOKIE
 

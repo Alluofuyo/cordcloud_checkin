@@ -2,6 +2,8 @@ import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 import argparse
 import requests
+from requests.cookies import RequestsCookieJar
+from requests.utils import dict_from_cookiejar, cookiejar_from_dict
 
 if __name__ == '__main__':
 
