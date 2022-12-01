@@ -20,7 +20,7 @@ jobs:
       working-directory: ./chrome
       run: |
         sudo cp ./chromedriver /usr/bin/chromedriver
-        sudo chmod +x /usr/bin/chromedriver
+        sudo chmod +rwx /usr/bin/chromedriver
         chromedriver --version
     - name: Set up Chrome
       working-directory: ./chrome
@@ -28,6 +28,7 @@ jobs:
         sudo touch /etc/default/google-chrome
         sudo apt-get update
         sudo apt install ./google-chrome-stable_current_amd64.deb
+        google-chrome --version
     
     - name: Set up the virtual X server
       run: |
