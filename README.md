@@ -6,7 +6,7 @@ This is a script that will automatically check in your CordCloud account and get
 You have two ways to use this script:
 
 1. Run the script in your machine.  
-`python AutoCheckIn.py --username=<username> --password=<password> --cookie=<cookie> [--keep-cookie]`  
+`python AutoCheckIn.py --username=<username> --password=<password> --url=<url>`  
 `username`: Your CordCloud username.Required.  
 `password`: Your CordCloud password.Required.  
 `url`: The cordcloud url ( e.g: `https://www.cordc.net` note that you shouldn't add a `/` behind the url).  
