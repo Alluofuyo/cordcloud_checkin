@@ -33,8 +33,7 @@ jobs:
     - name: Set up the virtual X server
       run: |
         sudo apt-get install xvfb
-        export DISPLAY=:99
-        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+        
 
     - uses: actions/cache@v3
       with:
@@ -54,5 +53,8 @@ jobs:
         PASSWORD: ${{secrets.PASSWORD}}
         URL: ${{secrets.URL}}
       run: |
+        export DISPLAY=:99
+        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+        jobs -l
         python AutoCheckin.py --username=$USERNAME --password=$PASSWORD --url=$URL
 
