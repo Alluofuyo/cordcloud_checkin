@@ -15,7 +15,27 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-        
+    
+    - name: Set up ChromeDriver
+      working-directory: ./chrome
+      run: |
+        sudo cp ./chromedriver /usr/bin/chromedriver
+        sudo chmod +x /usr/bin/chromedriver
+        chromedriver --version
+    - name: Set up Chrome
+      working-directory: ./chrome
+      run: |
+        sudo touch /etc/default/google-chrome
+        sudo apt-get update
+        sudo apt install ./google-chrome-stable_current_amd64.deb
+    
+    - name: Set up the virtual X server
+      run: |
+        sudo apt-get update
+        sudo apt-get install xvfb
+        export DISPLAY=:99
+        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+
     - uses: actions/cache@v3
       with:
         path: ~/.cache/pip
@@ -32,6 +52,7 @@ jobs:
       env: 
         USERNAME: ${{secrets.USERNAME}}
         PASSWORD: ${{secrets.PASSWORD}}
-        COOKIE: ${{secrets.COOKIE}}
+        URL: ${{secrets.URL}}
       run: |
-        python AutoCheckin.py --username=$USERNAME --password=$PASSWORD --cookie="$COOKIE"
+        python AutoCheckin.py --username=$USERNAME --password=$PASSWORD --url=$URL
+
