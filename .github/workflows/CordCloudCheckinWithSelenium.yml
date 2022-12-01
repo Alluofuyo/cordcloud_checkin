@@ -22,7 +22,7 @@ jobs:
       working-directory: ./chrome
       run: |
         sudo cp ./chromedriver /usr/bin/chromedriver
-        sudo chmod +x /usr/bin/chromedriver
+        sudo chmod 777 /usr/bin/chromedriver
         chromedriver --version
     - name: Set up Chrome
       working-directory: ./chrome
@@ -30,13 +30,12 @@ jobs:
         sudo touch /etc/default/google-chrome
         sudo apt-get update
         sudo apt install ./google-chrome-stable_current_amd64.deb
+        google-chrome --version
     
     - name: Set up the virtual X server
       run: |
         sudo apt-get install xvfb
-        export DISPLAY=:99
-        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
-
+        
     - uses: actions/cache@v3
       with:
         path: ~/.cache/pip
@@ -55,5 +54,8 @@ jobs:
         PASSWORD: ${{secrets.PASSWORD}}
         URL: ${{secrets.URL}}
       run: |
+        export DISPLAY=:99
+        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+        jobs -l
         python AutoCheckin.py --username=$USERNAME --password=$PASSWORD --url=$URL
 
