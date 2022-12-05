@@ -26,3 +26,6 @@ All done! :smile_cat: :smile_cat: :smile_cat:
 ***
 
 If you have any question, welcome to post issues!
+
+## Donation
+My invite link: `https://www.cordc.net/auth/register?code=Qne7`.
