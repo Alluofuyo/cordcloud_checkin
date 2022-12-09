@@ -27,7 +27,7 @@ jobs:
       run: |
         sudo touch /etc/default/google-chrome
         sudo apt-get update
-        sudo apt install ./google-chrome-stable_current_amd64.deb
+        sudo apt install ./google-chrome-stable_current_amd64.deb -y --allow-downgrades
         google-chrome --version
     
     - name: Set up the virtual X server
