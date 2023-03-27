@@ -44,7 +44,7 @@ if __name__ == '__main__':
             cookie = dict(cookie)
             c[cookie["name"]] = cookie["value"]
         
-        response = requests.post('https://www.cordc.net/user/checkin', cookies=c, headers={
+        response = requests.post(f'{url}/user/checkin', cookies=c, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.52",
             "Accept": "application/json, text/javascript, */*; q=0.01",
             "X-Requested-With": "XMLHttpRequest",
