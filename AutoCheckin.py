@@ -23,7 +23,7 @@ if __name__ == '__main__':
     options.add_argument('--no-sandbox')
     options.add_argument("--excludeSwitches=enable-automation")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = uc.Chrome(driver_executable_path="/usr/bin/chromedriver",options=options)
+    driver = uc.Chrome(options=options)
     driver.implicitly_wait(10)
     try:
 
