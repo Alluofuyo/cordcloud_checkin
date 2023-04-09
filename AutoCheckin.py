@@ -4,8 +4,42 @@ import argparse
 import requests
 import subprocess
 import os
+import sys
 from requests.cookies import RequestsCookieJar
 from requests.utils import dict_from_cookiejar, cookiejar_from_dict
+
+class ChromeDriverDownloader:
+    def __init__(self, version: str, platform: str):
+        self._current_name = ""
+        self._version = version
+        self._version_str = self._version.split('.')
+        self._platform = platform
+        self._chrome_driver_version_list = []
+        self._base_url = "https://chromedriver.storage.googleapis.com"
+
+    def _get_latest_version(self):
+        main_version = '.'.join(self._version_str[:3])
+        response = requests.get(f"{self._base_url}/LATEST_RELEASE_{main_version}")
+        return response.text
+
+    def download_chromedriver(self):
+        latest_version = self._get_latest_version()
+        if latest_version == self._version:
+            self._download(self._version)
+        elif int(self._version_str[3]) > int(latest_version.split('.')[3]):
+            self._download(latest_version)
+
+    def _download(self, version):
+        url = f"{self._base_url}/{version}/chromedriver_linux64.zip"
+        print(f"downloading chrome driver from {url}")
+        response = requests.get(url)
+        file_name = "chromedriver.zip"
+        with open(file_name, "wb") as f:
+            f.write(response.content)
+        if os.path.exists(file_name):
+            print("download chrome driver successfully.")
+        os.system("unzip chromedriver.zip")
+        os.remove(file_name)
 
 
 def get_chrome_version():
@@ -15,33 +49,14 @@ def get_chrome_version():
     print(f"google chrome version: {version}")
     return version
 
-def download_chromedriver(version):
-    url = f"https://chromedriver.storage.googleapis.com/{version}/chromedriver_linux64.zip"
-    print(f"downloading chrome driver from {url}")
-    response = requests.get(url)
-    file_name = "chromedriver.zip"
-    with open(file_name, "wb") as f:
-        f.write(response.content)
-    if os.path.exits(file_name):
-        print("download chrome driver successfully.")
-    os.system("unzip chromedriver.zip")
-    os.remove(file_name)
-
-if __name__ == '__main__':
-
+def parse_arguments():
     parser = argparse.ArgumentParser(description="CordCloud Checkin")
     parser.add_argument("-u", "--username", help="username", type=str,required=True)
     parser.add_argument("-p", "--password", help="password", type=str,required=True)
     parser.add_argument("-U","--url",help="cordcloud url",type=str,required=True)
-    args=parser.parse_args()
+    return parser.parse_args()
 
-    username = args.username
-    password = args.password
-    url = args.url
-    
-    chrome_version = get_chrome_version()
-    download_chromedriver(chrome_version)
-    
+def start_checkin(username,password,url):
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1280,1024")
     options.add_argument('--disable-gpu')
@@ -83,3 +98,30 @@ if __name__ == '__main__':
         print(e)
     finally:
         driver.quit()
+
+
+def download_chromerdriver():
+    chrome_version = get_chrome_version()
+    os_type = sys.platform
+    platform = "linux64"
+    if os_type == "linux":
+        platform = "linux64"
+    elif os_type == "win32":
+        platform = "win32"
+    elif os_type == "darwin":
+        platform = "mac64"
+    downloader = ChromeDriverDownloader(chrome_version,platform)
+    downloader.download_chromedriver()
+
+def main():
+    args=parse_arguments()
+
+    username = args.username
+    password = args.password
+    url = args.url
+    
+    download_chromedriver()
+    start_checkin(username,password,url)
+
+if __name__ == '__main__':
+    main()
