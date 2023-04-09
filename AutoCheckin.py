@@ -100,7 +100,7 @@ def start_checkin(username,password,url):
         driver.quit()
 
 
-def download_chromerdriver():
+def download_chromedriver():
     chrome_version = get_chrome_version()
     os_type = sys.platform
     platform = "linux64"
