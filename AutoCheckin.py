@@ -38,7 +38,7 @@ class ChromeDriverDownloader:
             f.write(response.content)
         if os.path.exists(file_name):
             print("download chrome driver successfully.")
-        os.system("unzip chromedriver.zip")
+        os.system("unzip chromedriver.zip -d chromedriver")
         os.remove(file_name)
 
 
