@@ -2,8 +2,26 @@ import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 import argparse
 import requests
+import subprocess
 from requests.cookies import RequestsCookieJar
 from requests.utils import dict_from_cookiejar, cookiejar_from_dict
+
+
+def get_chrome_version():
+    result = subprocess.run(['google-chrome', '--version'], stdout=subprocess.PIPE)
+    output = result.stdout.decode('utf-8')
+    version = output.strip().split()[-1]
+    return version
+
+def download_chromedriver(version):
+    url = f"https://chromedriver.storage.googleapis.com/{version}/chromedriver_linux64.zip"
+    response = requests.get(url)
+    file_name = "chromedriver.zip"
+    with open(file_name, "wb") as f:
+        f.write(response.content)
+    os.system("unzip chromedriver.zip")
+    os.remove(file_name)
+
 
 if __name__ == '__main__':
 
@@ -16,14 +34,17 @@ if __name__ == '__main__':
     username = args.username
     password = args.password
     url = args.url
-
+    
+    chrome_version = get_chrome_version()
+    download_chromedriver(chrome_version)
+    
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1280,1024")
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument("--excludeSwitches=enable-automation")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = uc.Chrome(options=options)
+    driver = uc.Chrome(options=options,driver_executable_path = "./chromedriver/chromedriver")
     driver.implicitly_wait(10)
     try:
 
