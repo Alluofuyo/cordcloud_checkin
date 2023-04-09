@@ -12,17 +12,20 @@ def get_chrome_version():
     result = subprocess.run(['google-chrome', '--version'], stdout=subprocess.PIPE)
     output = result.stdout.decode('utf-8')
     version = output.strip().split()[-1]
+    print(f"google chrome version: {version}")
     return version
 
 def download_chromedriver(version):
     url = f"https://chromedriver.storage.googleapis.com/{version}/chromedriver_linux64.zip"
+    print(f"downloading chrome driver from {url}")
     response = requests.get(url)
     file_name = "chromedriver.zip"
     with open(file_name, "wb") as f:
         f.write(response.content)
+    if os.path.exits(file_name):
+        print("download chrome driver successfully.")
     os.system("unzip chromedriver.zip")
     os.remove(file_name)
-
 
 if __name__ == '__main__':
 
