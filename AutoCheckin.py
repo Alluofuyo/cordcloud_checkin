@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 import argparse
 import requests
 import subprocess
+import os
 from requests.cookies import RequestsCookieJar
 from requests.utils import dict_from_cookiejar, cookiejar_from_dict
 
