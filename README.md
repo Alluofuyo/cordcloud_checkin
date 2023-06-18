@@ -10,6 +10,8 @@ You have two ways to use this script:
 `username`: Your CordCloud username.Required.  
 `password`: Your CordCloud password.Required.  
 `url`: The cordcloud url ( e.g: `https://www.cordc.net` note that you shouldn't add a `/` behind the url).  
+`chrome_path`: If you want to specify the chrome browser or you are in Windows, please specify the argument.
+`chrome_version`: If you have specified the `chrome_path`, you must specify this too.
 ***
 2. Run the script in Github Actions.(recommended)  
 First, fork this repository to your own repository.  

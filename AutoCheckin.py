@@ -1,12 +1,21 @@
+import argparse
+import os
+import subprocess
+import sys
+import zipfile
+
+import requests
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
-import argparse
-import requests
-import subprocess
-import os
-import sys
-from requests.cookies import RequestsCookieJar
-from requests.utils import dict_from_cookiejar, cookiejar_from_dict
+
+
+def unzip(src, dest):
+    if os.path.exists(src):
+        with zipfile.ZipFile(src, "r") as zf:
+            zf.extractall(dest)
+    else:
+        print("cannot find the zip file to unzip.")
+
 
 class ChromeDriverDownloader:
     def __init__(self, version: str, platform: str):
@@ -24,13 +33,10 @@ class ChromeDriverDownloader:
 
     def download_chromedriver(self):
         latest_version = self._get_latest_version()
-        if latest_version == self._version:
-            self._download(self._version)
-        elif int(self._version_str[3]) > int(latest_version.split('.')[3]):
-            self._download(latest_version)
+        return self._download(latest_version)
 
     def _download(self, version):
-        url = f"{self._base_url}/{version}/chromedriver_linux64.zip"
+        url = f"{self._base_url}/{version}/chromedriver_{self._platform}.zip"
         print(f"downloading chrome driver from {url}")
         response = requests.get(url)
         file_name = "chromedriver.zip"
@@ -38,8 +44,18 @@ class ChromeDriverDownloader:
             f.write(response.content)
         if os.path.exists(file_name):
             print("download chrome driver successfully.")
-        os.system("unzip chromedriver.zip -d chromedriver")
-        os.remove(file_name)
+            unzip(file_name, "chromedriver")
+            os.remove(file_name)
+            if (self._platform == "linux64" or self._platform == "mac64") and os.path.exists(
+                    "./chromedriver/chromedriver"):
+                print("unzip chromedriver to ./chromedriver/chromedriver")
+                return "./chromedriver/chromedriver"
+            elif self._platform == "win32" and os.path.exists("./chromedriver/chromedriver.exe"):
+                print("unzip chromedriver to ./chromedriver/chromedriver.exe")
+                return "./chromedriver/chromedriver.exe"
+            else:
+                print("unzip chromedriver failed.")
+                exit(-1)
 
 
 def get_chrome_version():
@@ -49,21 +65,30 @@ def get_chrome_version():
     print(f"google chrome version: {version}")
     return version
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="CordCloud Checkin")
-    parser.add_argument("-u", "--username", help="username", type=str,required=True)
-    parser.add_argument("-p", "--password", help="password", type=str,required=True)
-    parser.add_argument("-U","--url",help="cordcloud url",type=str,required=True)
+    parser.add_argument("-u", "--username", help="username", type=str, required=True)
+    parser.add_argument("-p", "--password", help="password", type=str, required=True)
+
+    parser.add_argument("-U", "--url", help="cordcloud url", type=str, required=True)
+    parser.add_argument("--chrome_path", help="chrome browser path", type=str)
+    parser.add_argument("--chrome_version", help="chrome version", type=str)
     return parser.parse_args()
 
-def start_checkin(username,password,url):
+
+def start_checkin(username, password, url, chrome_path, chromedriver_path):
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1280,1024")
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument("--excludeSwitches=enable-automation")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = uc.Chrome(options=options,driver_executable_path = "./chromedriver/chromedriver")
+    if chrome_path:
+        driver = uc.Chrome(options=options, browser_executable_path=chrome_path,
+                           driver_executable_path=chromedriver_path)
+    else:
+        driver = uc.Chrome(options=options, driver_executable_path=chromedriver_path)
     driver.implicitly_wait(10)
     try:
 
@@ -74,54 +99,66 @@ def start_checkin(username,password,url):
         password_input = driver.find_element(by=By.ID, value="passwd")
         password_input.send_keys(password)
         driver.find_element(by=By.ID, value="login").click()
-        text = driver.find_element(by=By.XPATH, value="/html/body/main/div[2]/section/div[2]/div[1]/div[1]/div/div[2]/p[2]").text
+        text = driver.find_element(by=By.XPATH,
+                                   value="/html/body/main/div[2]/section/div[2]/div[1]/div[1]/div/div[2]/p[2]").text
         print("Login success!")
         print(text)
 
         cookies = driver.get_cookies()
-        c={}
+        c = {}
         for cookie in cookies:
             cookie = dict(cookie)
             c[cookie["name"]] = cookie["value"]
-        
+
         response = requests.post(f'{url}/user/checkin', cookies=c, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.52",
             "Accept": "application/json, text/javascript, */*; q=0.01",
             "X-Requested-With": "XMLHttpRequest",
             "Origin": url,
             "Referer": f"{url}/user"
-        },timeout=10)
+        }, timeout=10)
 
         print(response.json())
-    
+
     except Exception as e:
         print(e)
     finally:
         driver.quit()
 
 
-def download_chromedriver():
-    chrome_version = get_chrome_version()
+def download_chromedriver(chrome_version):
     os_type = sys.platform
     platform = "linux64"
     if os_type == "linux":
         platform = "linux64"
+        if not chrome_version:
+            chrome_version = get_chrome_version()
     elif os_type == "win32":
         platform = "win32"
+        if not chrome_version:
+            print("please specify the chrome version, if you are in Windows.")
+            exit(-1)
     elif os_type == "darwin":
         platform = "mac64"
-    downloader = ChromeDriverDownloader(chrome_version,platform)
-    downloader.download_chromedriver()
+        if not chrome_version:
+            chrome_version = get_chrome_version()
+    downloader = ChromeDriverDownloader(chrome_version, platform)
+    return downloader.download_chromedriver()
+
 
 def main():
-    args=parse_arguments()
+    args = parse_arguments()
 
     username = args.username
     password = args.password
     url = args.url
-    
-    download_chromedriver()
-    start_checkin(username,password,url)
+
+    chrome_path = args.chrome_path
+    chrome_version = args.chrome_version
+
+    chromedriver_path = download_chromedriver(chrome_version)
+    start_checkin(username, password, url, chrome_path, chromedriver_path)
+
 
 if __name__ == '__main__':
     main()
