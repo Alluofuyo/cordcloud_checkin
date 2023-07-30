@@ -72,13 +72,13 @@ class ChromeDriverDownloader:
         print(response.json())
         if self._platform == "linux64":
             url = list(filter(lambda item: item["platform"] == "linux64", list(
-                response.json()["channels"]["Stable"]["downloads"]["chromedriver"])))[0]
+                response.json()["channels"]["Stable"]["downloads"]["chromedriver"])))[0]["url"]
         elif self._platform == "mac64":
             url = list(filter(lambda item: item["platform"] == "mac-x64", list(
-                response.json()["channels"]["Stable"]["downloads"]["chromedriver"])))[0]
+                response.json()["channels"]["Stable"]["downloads"]["chromedriver"])))[0]["url"]
         elif self._platform == "win32":
             url = list(filter(lambda item: item["platform"] == "win64", list(
-                response.json()["channels"]["Stable"]["downloads"]["chromedriver"])))[0]
+                response.json()["channels"]["Stable"]["downloads"]["chromedriver"])))[0]["url"]
         download_response = requests.get(url)
         file_name = "chromedriver.zip"
         with open(file_name, "wb") as f:
