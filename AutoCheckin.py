@@ -69,6 +69,7 @@ class ChromeDriverDownloader:
         response = requests.get(
             f"https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json")
         url = ""
+        print(response.json())
         if self._platform == "linux64":
             url = list(filter(lambda item: item["platform"] == "linux64", list(
                 response.json()["channels"]["downloads"]["chromedriver"])))[0]
