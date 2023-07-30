@@ -55,12 +55,12 @@ class ChromeDriverDownloader:
             unzip(file_name, "chromedriver")
             os.remove(file_name)
             if (self._platform == "linux64" or self._platform == "mac64") and os.path.exists(
-                    "./chromedriver-linux64/chromedriver"):
+                    "./chromedriver/chromedriver-linux64/chromedriver"):
                 print("unzip chromedriver to ./chromedriver-linux64/chromedriver")
-                return "./chromedriver-linux64/chromedriver"
+                return "./chromedriver/chromedriver-linux64/chromedriver"
             elif self._platform == "win32" and os.path.exists("./chromedriver-win64/chromedriver.exe"):
                 print("unzip chromedriver to ./chromedriver-win64/chromedriver.exe")
-                return "./chromedriver-win64/chromedriver.exe"
+                return "./chromedriver/chromedriver-win64/chromedriver.exe"
             else:
                 print("unzip chromedriver failed.")
                 exit(-1)
