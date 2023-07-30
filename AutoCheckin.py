@@ -35,7 +35,7 @@ class ChromeDriverDownloader:
     def download_chromedriver(self):
         major_version = self._version_str[0]
         print(f"major version is {major_version}")
-        if int(major_version) > 115:
+        if int(major_version) >= 115:
             return self._download_testing()
         latest_version = self._get_latest_version()
         return self._download(latest_version)
