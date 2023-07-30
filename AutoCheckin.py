@@ -25,6 +25,7 @@ class ChromeDriverDownloader:
         self._platform = platform
         self._chrome_driver_version_list = []
         self._base_url = "https://chromedriver.storage.googleapis.com"
+        self._testing_url = "https://googlechromelabs.github.io"
 
     def _get_latest_version(self):
         main_version = '.'.join(self._version_str[:3])
@@ -32,6 +33,9 @@ class ChromeDriverDownloader:
         return response.text
 
     def download_chromedriver(self):
+        major_version = self._version_str[0]
+        if int(major_version) > 115:
+            return self._download_testing()
         latest_version = self._get_latest_version()
         return self._download(latest_version)
 
@@ -42,6 +46,9 @@ class ChromeDriverDownloader:
         file_name = "chromedriver.zip"
         with open(file_name, "wb") as f:
             f.write(response.content)
+        return self._unzipfile(file_name)
+
+    def _unzipfile(self, file_name):
         if os.path.exists(file_name):
             print("download chrome driver successfully.")
             unzip(file_name, "chromedriver")
@@ -56,6 +63,25 @@ class ChromeDriverDownloader:
             else:
                 print("unzip chromedriver failed.")
                 exit(-1)
+
+    def _download_testing(self):
+        response = requests.get(
+            f"https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json")
+        url = ""
+        if self._platform == "linux64":
+            url = list(filter(lambda item: item["platform"] == "linux64", list(
+                response.json()["channels"]["downloads"]["chromedriver"])))[0]
+        elif self._platform == "mac64":
+            url = list(filter(lambda item: item["platform"] == "mac-x64", list(
+                response.json()["channels"]["downloads"]["chromedriver"])))[0]
+        elif self._platform == "win32":
+            url = list(filter(lambda item: item["platform"] == "win64", list(
+                response.json()["channels"]["downloads"]["chromedriver"])))[0]
+        download_response = requests.get(url)
+        file_name = "chromedriver.zip"
+        with open(file_name, "wb") as f:
+            f.write(download_response.content)
+        return self._unzipfile(file_name)
 
 
 def get_chrome_version():
