@@ -2,6 +2,7 @@ import argparse
 import os
 import subprocess
 import sys
+import stat
 import zipfile
 
 import requests
