@@ -59,7 +59,8 @@ class ChromeDriverDownloader:
                     "./chromedriver/chromedriver-linux64/chromedriver"):
                 chromedriver_file="./chromedriver/chromedriver-linux64/chromedriver"
                 print(f"unzip chromedriver to {chromedriver_file}")
-                os.chmod(chromedriver_file,stat.S_IRWXG)
+                #os.chmod(chromedriver_file,stat.S_IRWXG)
+                os.system(f"chmod a+rwx {chromedriver_file}")
                 return chromedriver_file
             elif self._platform == "win32" and os.path.exists("./chromedriver-win64/chromedriver.exe"):
                 chromedriver_file="./chromedriver-win64/chromedriver.exe"
