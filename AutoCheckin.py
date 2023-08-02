@@ -61,7 +61,7 @@ class ChromeDriverDownloader:
                 os.chmod(chromedriver_file,stat.S_IXGRP)
                 return chromedriver_file
             elif self._platform == "win32" and os.path.exists("./chromedriver-win64/chromedriver.exe"):
-                chromedriver_file"./chromedriver-win64/chromedriver.exe"
+                chromedriver_file="./chromedriver-win64/chromedriver.exe"
                 print(f"unzip chromedriver to {chromedriver_file}")
                 os.chmod(chromedriver_file,stat.S_IXGRP)
                 return chromedriver_file
