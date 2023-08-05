@@ -124,8 +124,8 @@ def start_checkin(username, password, url, chrome_path, chromedriver_path, debug
     else:
         driver = uc.Chrome(options=options, driver_executable_path=chromedriver_path)
     if debug:
-        print(f"browser_executable_path: {chromedriver_path}")
-        print(f"driver_executable_path: {driver_executable_path}")
+        print(f"browser_executable_path: {chrome_path}")
+        print(f"driver_executable_path: {chromedriver_path}")
 
     driver.implicitly_wait(10)
     try:
