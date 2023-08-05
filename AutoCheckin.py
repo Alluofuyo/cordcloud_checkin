@@ -206,7 +206,7 @@ def main():
     url = args.url
     if args.debug:
         debug = True
-        
+        print("debug started.")
 
     chrome_path = args.chrome_path
     chrome_version = args.chrome_version
