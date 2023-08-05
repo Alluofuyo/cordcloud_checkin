@@ -9,6 +9,7 @@ import requests
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 
+debug = False
 
 def unzip(src, dest):
     if os.path.exists(src):
@@ -108,6 +109,7 @@ def parse_arguments():
     parser.add_argument("-U", "--url", help="cordcloud url", type=str, required=True)
     parser.add_argument("--chrome_path", help="chrome browser path", type=str)
     parser.add_argument("--chrome_version", help="chrome version", type=str)
+    parser.add_argument("--debug",help="debug options")
     return parser.parse_args()
 
 
@@ -123,27 +125,38 @@ def start_checkin(username, password, url, chrome_path, chromedriver_path):
                            driver_executable_path=chromedriver_path)
     else:
         driver = uc.Chrome(options=options, driver_executable_path=chromedriver_path)
+    if debug:
+        print(f"browser_executable_path: {chromedriver_path}")
+        print(f"driver_executable_path: {driver_executable_path}")
+
     driver.implicitly_wait(10)
     try:
-
+        
         driver.get(f'{url}/auth/login')
-
+        if debug:
+            print(f"get page url: f{driver.get_current_url()}")
+            print(f"page sources: f{driver.page_source()}")
         email_input = driver.find_element(by=By.ID, value="email")
         email_input.send_keys(username)
         password_input = driver.find_element(by=By.ID, value="passwd")
         password_input.send_keys(password)
         driver.find_element(by=By.ID, value="login").click()
+        if debug:
+            print(f"get page url: f{driver.get_current_url()}")
+            print(f"page sources: f{driver.page_source()}")
         text = driver.find_element(by=By.XPATH,
                                    value="/html/body/main/div[2]/section/div[2]/div[1]/div[1]/div/div[2]/p[2]").text
         print("Login success!")
         print(text)
 
         cookies = driver.get_cookies()
+        if debug:
+            print(f"get cookies: {cookies}")
         c = {}
         for cookie in cookies:
             cookie = dict(cookie)
             c[cookie["name"]] = cookie["value"]
-
+        
         response = requests.post(f'{url}/user/checkin', cookies=c, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.52",
             "Accept": "application/json, text/javascript, */*; q=0.01",
@@ -151,7 +164,12 @@ def start_checkin(username, password, url, chrome_path, chromedriver_path):
             "Origin": url,
             "Referer": f"{url}/user"
         }, timeout=10)
-
+        if debug:
+            print(f"post elapsed time: {response.elapsed}")
+            print(f"post url: {response.url}")
+            print(f"post status code: {response.status_code}")
+            print(f"post headers: {response.headers}")
+            print(f"post text: {repsonse.text}")
         print(response.json())
 
     except Exception as e:
@@ -186,6 +204,9 @@ def main():
     username = args.username
     password = args.password
     url = args.url
+    if args.debug:
+        debug = True
+        
 
     chrome_path = args.chrome_path
     chrome_version = args.chrome_version
