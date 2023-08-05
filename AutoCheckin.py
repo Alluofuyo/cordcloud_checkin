@@ -109,7 +109,7 @@ def parse_arguments():
     parser.add_argument("-U", "--url", help="cordcloud url", type=str, required=True)
     parser.add_argument("--chrome_path", help="chrome browser path", type=str)
     parser.add_argument("--chrome_version", help="chrome version", type=str)
-    parser.add_argument("--debug",help="debug options")
+    parser.add_argument("--debug",help="debug options",action="store_true")
     return parser.parse_args()
 
 
