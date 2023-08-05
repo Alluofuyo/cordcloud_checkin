@@ -148,8 +148,6 @@ def start_checkin(username, password, url, chrome_path, chromedriver_path, debug
         print(text)
 
         cookies = driver.get_cookies()
-        if debug:
-            print(f"get cookies: {cookies}")
         c = {}
         for cookie in cookies:
             cookie = dict(cookie)
@@ -167,7 +165,7 @@ def start_checkin(username, password, url, chrome_path, chromedriver_path, debug
             print(f"post url: {response.url}")
             print(f"post status code: {response.status_code}")
             print(f"post headers: {response.headers}")
-            print(f"post text: {repsonse.text}")
+            print(f"post text: {response.text}")
         print(response.json())
 
     except Exception as e:
