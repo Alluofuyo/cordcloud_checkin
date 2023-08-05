@@ -132,16 +132,16 @@ def start_checkin(username, password, url, chrome_path, chromedriver_path, debug
         
         driver.get(f'{url}/auth/login')
         if debug:
-            print(f"get page url: f{driver.current_url()}")
-            print(f"page sources: f{driver.page_source()}")
+            print(f"get page url: f{driver.current_url}")
+            print(f"page sources: f{driver.page_source}")
         email_input = driver.find_element(by=By.ID, value="email")
         email_input.send_keys(username)
         password_input = driver.find_element(by=By.ID, value="passwd")
         password_input.send_keys(password)
         driver.find_element(by=By.ID, value="login").click()
         if debug:
-            print(f"get page url: f{driver.get_current_url()}")
-            print(f"page sources: f{driver.page_source()}")
+            print(f"get page url: f{driver.current_url}")
+            print(f"page sources: f{driver.page_source}")
         text = driver.find_element(by=By.XPATH,
                                    value="/html/body/main/div[2]/section/div[2]/div[1]/div[1]/div/div[2]/p[2]").text
         print("Login success!")
