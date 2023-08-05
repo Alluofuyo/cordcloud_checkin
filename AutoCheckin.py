@@ -9,8 +9,6 @@ import requests
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 
-debug = False
-
 def unzip(src, dest):
     if os.path.exists(src):
         with zipfile.ZipFile(src, "r") as zf:
@@ -113,7 +111,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def start_checkin(username, password, url, chrome_path, chromedriver_path):
+def start_checkin(username, password, url, chrome_path, chromedriver_path, debug=False):
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1280,1024")
     options.add_argument('--disable-gpu')
@@ -204,15 +202,12 @@ def main():
     username = args.username
     password = args.password
     url = args.url
-    if args.debug:
-        debug = True
-        print("debug started.")
 
     chrome_path = args.chrome_path
     chrome_version = args.chrome_version
 
     chromedriver_path = download_chromedriver(chrome_version)
-    start_checkin(username, password, url, chrome_path, chromedriver_path)
+    start_checkin(username, password, url, chrome_path, chromedriver_path,args.debug)
 
 
 if __name__ == '__main__':
