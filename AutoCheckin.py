@@ -71,16 +71,15 @@ class ChromeDriverDownloader:
                 exit(-1)
 
     def _download_testing(self):
-        response = requests.get(
-            f"https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json")
+        response = requests.get("https://googlechromelabs.github.io/chrome-for-testing/latest-versions-per-milestone-with-downloads.json")
         url = ""
         print(response.json())
         if self._platform == "linux64":
-            url = response.json()[f"{self._version_str[0]}.{self._version_str[1]}.{self._version_str[2]}"]["downloads"]["chromedriver"][0]["url"]
+            url = list(filter(lambda x: x["platform"]=="linux64",response.json()["milestones"][f"{self._version_str[0]}"]["downloads"]["chromedriver"]))[0]["url"]
         elif self._platform == "mac64":
-            url = response.json()[f"{self._version_str[0]}.{self._version_str[1]}.{self._version_str[2]}"]["downloads"]["chromedriver"][2]["url"]
+            url = list(filter(lambda x: x["platform"]=="mac-x64",response.json()["milestones"][f"{self._version_str[0]}"]["downloads"]["chromedriver"]))[0]["url"]
         elif self._platform == "win32":
-            url = response.json()[f"{self._version_str[0]}.{self._version_str[1]}.{self._version_str[2]}"]["downloads"]["chromedriver"][3]["url"]
+            url = list(filter(lambda x: x["platform"]=="win64",response.json()["milestones"][f"{self._version_str[0]}"]["downloads"]["chromedriver"]))[0]["url"]
         download_response = requests.get(url)
         file_name = "chromedriver.zip"
         with open(file_name, "wb") as f:
