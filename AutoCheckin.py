@@ -114,6 +114,7 @@ def start_checkin(username, password, url, chrome_path, chromedriver_path, debug
     options.add_argument('--no-sandbox')
     options.add_argument("--excludeSwitches=enable-automation")
     options.add_argument("--disable-blink-features=AutomationControlled")
+    options.headless = True
     if chrome_path:
         driver = uc.Chrome(options=options, browser_executable_path=chrome_path,
                            driver_executable_path=chromedriver_path)
