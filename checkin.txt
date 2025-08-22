@@ -1,0 +1,66 @@
+:authority
+cordcloud.one
+:method
+POST
+:path
+/user/checkin
+:scheme
+https
+accept
+application/json, text/javascript, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+content-length
+0
+cookie
+PHPSESSID=bve2b7is59d4reigqimomjpvo1; crisp-client%2Fsession%2Ff24e0785-07d5-4a5f-961b-bde1c9b6245b=session_41f74ce6-5b47-46f6-a9c3-94a3e3dcfbfb; uid=121126; email=1784104469%40qq.com; key=877090aa140d10818023bd5e73607f1866a0aba71e30b; ip=9582c57b319486d2c38dfd9007d87956; expire_in=1755945645
+origin
+https://cordcloud.one
+priority
+u=1, i
+referer
+https://cordcloud.one/user
+sec-ch-ua
+"Not;A=Brand";v="99", "Microsoft Edge";v="139", "Chromium";v="139"
+sec-ch-ua-arch
+"x86"
+sec-ch-ua-bitness
+"64"
+sec-ch-ua-full-version
+"139.0.3405.102"
+sec-ch-ua-full-version-list
+"Not;A=Brand";v="99.0.0.0", "Microsoft Edge";v="139.0.3405.102", "Chromium";v="139.0.7258.128"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-model
+""
+sec-ch-ua-platform
+"Windows"
+sec-ch-ua-platform-version
+"19.0.0"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+x-requested-with
+XMLHttpRequest
+
+
+
+{
+    "msg": "获得了 209MB 流量.",
+    "unflowtraffic": 3860688917796,
+    "traffic": "3.51TB",
+    "trafficInfo": {
+        "todayUsedTraffic": "1.24GB",
+        "lastUsedTraffic": "2.7TB",
+        "unUsedTraffic": "834.27GB"
+    },
+    "ret": 1
+}
