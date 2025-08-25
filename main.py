@@ -39,14 +39,16 @@ def check_url_connection(urls):
         results.append({
           "url": url,
           "response_time": response_time,
-          "status": "available"
+          "status": "available",
+          "used": False
         })
       else:
         logger.warn(f"URL {url} is not connected")
         results.append({
           "url": url,
           "response_time": -1,
-          "status": "unavailable"
+          "status": "unavailable",
+          "used": False
         })
     except requests.exceptions.RequestException as e:
       logger.warn(f"URL {url} is not connected")
