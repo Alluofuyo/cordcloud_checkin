@@ -1,3 +1,4 @@
+name: courd_cloud_api_checkin
 on:
   schedule:
     - cron: '0 0 * * *'
