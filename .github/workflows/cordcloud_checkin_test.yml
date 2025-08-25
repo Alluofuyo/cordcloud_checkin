@@ -6,9 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TZ: Asia/Shanghai
-      CC_USERNAME: ${{secret.CC_USERNAME}}
-      CC_PASSWORD: ${{secret.CC_PASSWORD}}
-      CC_API_URLS: ${{variable.CC_API_URLS}}
+      CC_USERNAME: ${{secrets.CC_USERNAME}}
+      CC_PASSWORD: ${{secrets.CC_PASSWORD}}
+      CC_API_URLS: ${{vars.CC_API_URLS}}
     steps:
       - name: Check Date
         run: date
@@ -36,6 +36,7 @@ jobs:
           uv run python main.py
 
     
+
 
 
 
