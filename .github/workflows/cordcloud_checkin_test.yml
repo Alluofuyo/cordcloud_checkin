@@ -27,10 +27,11 @@ jobs:
           # Glob pattern to match files relative to the repository root to control the cache.
       - name: install dependencies
         run:
-          uv init && uv sync
+          uv sync
       - name: run task
         run:
           uv run python main.py
 
     
+
 
