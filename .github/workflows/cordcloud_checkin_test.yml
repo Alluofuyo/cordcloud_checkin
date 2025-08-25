@@ -10,6 +10,15 @@ jobs:
       CC_PASSWORD: ${{ secrets.CC_PASSWORD }}
       CC_API_URLS: ${{ vars.CC_API_URLS }}
     steps:
+      - name: Debug CC_USERNAME
+        run: |
+          if [ -z "${CC_USERNAME}" ]; then
+            echo "CC_USERNAME is empty"
+          else
+            echo "CC_USERNAME is set"
+          fi
+        env:
+          CC_USERNAME: ${{ secrets.CC_USERNAME }}
       - name: Check Date
         run: date
       - name: Check out cordcloud_api branch
@@ -36,6 +45,7 @@ jobs:
           uv run python main.py
 
     
+
 
 
 
