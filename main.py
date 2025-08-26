@@ -6,6 +6,7 @@ import logging
 
 from api import ApiManager, CsrfError, LoginError, CheckInError
 from requests.exceptions import JSONDecodeError
+from pydoll_login import create_api_manager_with_cookies
 dotenv.load_dotenv()
 
 USERNAME = os.getenv("CC_USERNAME")
@@ -39,14 +40,16 @@ def check_url_connection(urls):
         results.append({
           "url": url,
           "response_time": response_time,
-          "status": "available"
+          "status": "available",
+          "used": False
         })
       else:
         logger.warn(f"URL {url} is not connected")
         results.append({
           "url": url,
           "response_time": -1,
-          "status": "unavailable"
+          "status": "unavailable",
+          "used": False
         })
     except requests.exceptions.RequestException as e:
       logger.warn(f"URL {url} is not connected")
@@ -74,20 +77,37 @@ def switch_url(results):
 
 def do_check_in(url):
   api_manager = ApiManager(url)
-  result = api_manager.login(USERNAME, PASSWORD)
-  if result["ret"] == 0:
+  try:
+    result = api_manager.login(USERNAME, PASSWORD)
+    if result["ret"] == 0:
+      logger.error(result["msg"])
+      return False
+    result = api_manager.check_in()
+    if result["ret"] == 0 and result["msg"] != "您似乎已经签到过了...":
+      logger.error(result["msg"])
+      return False
+    if result["ret"] == 1 and 'trafficInfo' in result:
+      logger.info(result["msg"])
+      logger.info(f"今日已用流量 {result['trafficInfo']['todayUsedTraffic']}, 历史使用流量 {result['trafficInfo']['lastUsedTraffic']}, 剩余流量 {result['trafficInfo']['unUsedTraffic']}, 总流量 {result['traffic']}")
+      return True
     logger.error(result["msg"])
     return False
-  result = api_manager.check_in()
-  if result["ret"] == 0 and result["msg"] != "您似乎已经签到过了...":
-    logger.error(result["msg"])
-    return False
-  if result["ret"] == 1 and 'trafficInfo' in result:
-    logger.info(result["msg"])
-    logger.info(f"今日已用流量 {result['trafficInfo']['todayUsedTraffic']}, 历史使用流量 {result['trafficInfo']['lastUsedTraffic']}, 剩余流量 {result['trafficInfo']['unUsedTraffic']}, 总流量 {result['traffic']}")
-    return True
-  logger.error(result["msg"])
-  return False
+  except (CsrfError, LoginError, CheckInError) as e:
+    if "403" in str(e):
+      logger.warn("API 403 detected, falling back to pydoll login.")
+      fallback_manager = create_api_manager_with_cookies(url, USERNAME, PASSWORD)
+      result = fallback_manager.check_in()
+      if result["ret"] == 0 and result["msg"] != "您似乎已经签到过了...":
+        logger.error(result["msg"])
+        return False
+      if result["ret"] == 1 and 'trafficInfo' in result:
+        logger.info(result["msg"])
+        logger.info(f"今日已用流量 {result['trafficInfo']['todayUsedTraffic']}, 历史使用流量 {result['trafficInfo']['lastUsedTraffic']}, 剩余流量 {result['trafficInfo']['unUsedTraffic']}, 总流量 {result['traffic']}")
+        return True
+      logger.error(result["msg"])
+      return False
+    else:
+      raise
 
 def main():
   results = check_url_connection(API_URLS)
