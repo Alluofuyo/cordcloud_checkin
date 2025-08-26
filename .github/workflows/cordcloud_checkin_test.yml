@@ -9,6 +9,7 @@ jobs:
       CC_USERNAME: ${{ secrets.CC_USERNAME }}
       CC_PASSWORD: ${{ secrets.CC_PASSWORD }}
       CC_API_URLS: ${{ vars.CC_API_URLS }}
+      DOLL_BROWSER_HEADLESS: false
     steps:
       - name: Debug CC_USERNAME
         run: |
@@ -45,6 +46,7 @@ jobs:
           uv run python main.py
 
     
+
 
 
 
