@@ -10,6 +10,8 @@ from pydoll.browser.options import ChromiumOptions
 import requests
 from bs4 import BeautifulSoup
 
+import config
+
 
 logger = logging.getLogger(__name__)
 
@@ -121,20 +123,20 @@ def _attempt_login_with_curl(base_url: str, username: str, password: str, user_a
   return session
 
 
-async def _attempt_login_with_pydoll(base_url: str, username: str, password: str, user_agent: str) -> Optional[requests.Session]:
+async def _attempt_login_with_pydoll(base_url: str, username: str, password: str, user_agent: Optional[str] = None) -> Optional[requests.Session]:
   """
   Attempt to login using pydoll (async). Returns a requests.Session on success, or None on failure.
   """
   browser = None
   try:
     options = ChromiumOptions()
-    options.headless = True
-    if user_agent:
-      options.add_argument(f"--user-agent={user_agent}")
+    options.headless = config.PYDOLL_HEADLESS
+    options.add_argument(f"--user-agent={config.PYDOLL_USER_AGENT}")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-blink-features=AutomationControlled")
+    
 
     browser = Chrome(options=options)
     tab = await browser.start()
@@ -149,9 +151,9 @@ async def _attempt_login_with_pydoll(base_url: str, username: str, password: str
       pass
 
     from pydoll.constants import By, Key
-    email_input = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[name=email]", timeout=10, raise_exc=False)
-    passwd_input = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[name=passwd]", timeout=10, raise_exc=False)
-    submit_btn = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[type=submit], button[type=submit]", timeout=10, raise_exc=False)
+    email_input = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[name=Email]", timeout=10, raise_exc=False)
+    passwd_input = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[name=Password]", timeout=10, raise_exc=False)
+    submit_btn = await tab.find_or_wait_element(By.ID, "login", timeout=10, raise_exc=False)
 
     if email_input:
       await email_input.click()
@@ -204,12 +206,13 @@ async def _attempt_login_with_pydoll(base_url: str, username: str, password: str
     return None
 
 
-async def login_and_get_session(url: str, username: str, password: str, user_agent: Optional[str] = None) -> requests.Session:
+async def login_and_get_session(url: str, username: str, password: str) -> requests.Session:
   """
   Attempt to obtain a logged-in requests.Session using (1) pydoll automation if available,
   otherwise (2) curl-based HTML fetch and cookie aggregation to bypass Cloudflare and submit login.
   """
-  if user_agent is None:
+  user_agent = config.PYDOLL_USER_AGENT
+  if user_agent is None or user_agent == "":
     user_agent = (
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -224,13 +227,13 @@ async def login_and_get_session(url: str, username: str, password: str, user_age
   return _attempt_login_with_curl(url, username, password, user_agent)
 
 
-async def create_api_manager_with_cookies(url: str, username: str, password: str, user_agent: Optional[str] = None):
+async def create_api_manager_with_cookies(url: str, username: str, password: str):
   """
   Helper to create ApiManager with a logged-in session (cookies pre-set), using the strategies above.
   """
   from api import ApiManager  # Local import to avoid circular deps on import-time
 
-  session = await login_and_get_session(url, username, password, user_agent)
+  session = await login_and_get_session(url, username, password)
   api_manager = ApiManager(url)
   api_manager.session = session
   return api_manager

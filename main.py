@@ -1,23 +1,13 @@
 import time
 import requests
 import os
-import dotenv
 import logging
 import asyncio
 
 from api import ApiManager, CsrfError, LoginError, CheckInError
 from requests.exceptions import JSONDecodeError
 from pydoll_login import create_api_manager_with_cookies
-dotenv.load_dotenv()
-
-USERNAME = os.getenv("CC_USERNAME")
-PASSWORD = os.getenv("CC_PASSWORD")
-API_URLS = os.getenv("CC_API_URLS").split(",") if os.getenv("CC_API_URLS") else ""
-SHOULD_SEND_EMAIL = os.getenv("SHOULD_SEND_EMAIL") == "true"
-EMAIL_SMTP_SERVER = os.getenv("EMAIL_SMTP_SERVER")
-SENDER_EMAIL = os.getenv("SENDER_EMAIL")
-SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
-RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL").split(",") if os.getenv("RECEIVER_EMAIL") else ""
+import config
 
 
 logging.basicConfig(
@@ -45,7 +35,7 @@ def check_url_connection(urls):
           "used": False
         })
       else:
-        logger.warn(f"URL {url} is not connected")
+        logger.warning(f"URL {url} is not connected")
         results.append({
           "url": url,
           "response_time": -1,
@@ -53,7 +43,7 @@ def check_url_connection(urls):
           "used": False
         })
     except requests.exceptions.RequestException as e:
-      logger.warn(f"URL {url} is not connected")
+      logger.warning(f"URL {url} is not connected")
       results.append({
         "url": url,
         "response_time": -1,
@@ -79,7 +69,7 @@ def switch_url(results):
 async def do_check_in(url):
   api_manager = ApiManager(url)
   try:
-    result = api_manager.login(USERNAME, PASSWORD)
+    result = api_manager.login(config.USERNAME, config.PASSWORD)
     if result["ret"] == 0:
       logger.error(result["msg"])
       return False
@@ -95,8 +85,8 @@ async def do_check_in(url):
     return False
   except (CsrfError, LoginError, CheckInError) as e:
     if "403" in str(e):
-      logger.warn("API 403 detected, falling back to pydoll login.")
-      fallback_manager = await create_api_manager_with_cookies(url, USERNAME, PASSWORD)
+      logger.warninging("API 403 detected, falling back to pydoll login.")
+      fallback_manager = await create_api_manager_with_cookies(url, config.USERNAME, config.PASSWORD)
       result = fallback_manager.check_in()
       if result["ret"] == 0 and result["msg"] != "您似乎已经签到过了...":
         logger.error(result["msg"])
@@ -111,7 +101,7 @@ async def do_check_in(url):
       raise
 
 async def main():
-  results = check_url_connection(API_URLS)
+  results = check_url_connection(config.API_URLS)
   best_result = pick_one_best(results)
   finished = False
   while not finished:
@@ -119,7 +109,7 @@ async def main():
       best_result["used"] = True
       success = await do_check_in(best_result["url"])
       # success = True
-      # await create_api_manager_with_cookies(best_result["url"], USERNAME, PASSWORD)
+      # await create_api_manager_with_cookies(best_result["url"], config.USERNAME, config.PASSWORD)
 
       if success:
         logger.info("成功完成签到")
