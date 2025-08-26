@@ -5,6 +5,8 @@ from http.cookies import SimpleCookie
 from typing import Dict, Tuple, Optional
 from urllib.parse import urljoin, urlparse
 
+from pydoll.browser.chromium.chrome import Chrome
+from pydoll.browser.options import ChromiumOptions
 import requests
 from bs4 import BeautifulSoup
 
@@ -119,35 +121,61 @@ def _attempt_login_with_curl(base_url: str, username: str, password: str, user_a
   return session
 
 
-def _attempt_login_with_pydoll(base_url: str, username: str, password: str, user_agent: str) -> Optional[requests.Session]:
+async def _attempt_login_with_pydoll(base_url: str, username: str, password: str, user_agent: str) -> Optional[requests.Session]:
   """
-  Attempt to login using pydoll, if available. Returns a requests.Session on success, or None on failure.
-  This path is best-effort; if pydoll is not installed or fails, caller should fallback to curl path.
+  Attempt to login using pydoll (async). Returns a requests.Session on success, or None on failure.
   """
+  browser = None
   try:
-    import pydoll  # type: ignore
-  except Exception:
-    logger.info("pydoll not available; skipping pydoll login path.")
-    return None
+    options = ChromiumOptions()
+    options.headless = True
+    if user_agent:
+      options.add_argument(f"--user-agent={user_agent}")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-blink-features=AutomationControlled")
 
-  try:
-    # NOTE: pydoll API is assumed; adjust if your pydoll usage differs.
-    # The following is a conservative, generic automation flow.
-    browser = pydoll.launch(headless=True, user_agent=user_agent)
-    page = browser.new_page()
+    browser = Chrome(options=options)
+    tab = await browser.start()
+
     login_url = urljoin(base_url, _LOGIN_PATH)
-    page.goto(login_url)
+    await tab.go_to(login_url)
 
-    # Fill in known field names used by the site
-    page.fill("input[name=email]", username)
-    page.fill("input[name=passwd]", password)
-    # Some sites have a submit button with type=submit or name=submit
-    page.click("input[type=submit], button[type=submit]")
-    page.wait_for_load_state("networkidle")
+    # Try to auto-bypass Cloudflare turnstile if present (best-effort)
+    try:
+      await tab.enable_auto_solve_cloudflare_captcha()
+    except Exception:
+      pass
 
-    # Extract cookies from the page context
-    page_cookies = page.context.cookies()
-    browser.close()
+    from pydoll.constants import By, Key
+    email_input = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[name=email]", timeout=10, raise_exc=False)
+    passwd_input = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[name=passwd]", timeout=10, raise_exc=False)
+    submit_btn = await tab.find_or_wait_element(By.CSS_SELECTOR, "input[type=submit], button[type=submit]", timeout=10, raise_exc=False)
+
+    if email_input:
+      await email_input.click()
+      await email_input.insert_text(username)
+    if passwd_input:
+      await passwd_input.click()
+      await passwd_input.insert_text(password)
+    if submit_btn:
+      await submit_btn.click()
+    elif passwd_input:
+      await passwd_input.press_keyboard_key(Key.ENTER)
+
+    try:
+      await tab.enable_network_events()
+      import asyncio as _asyncio
+      await _asyncio.sleep(3)
+    except Exception:
+      pass
+
+    page_cookies = await tab.get_cookies()
+
+    # Close browser before building session
+    await browser.stop()
+    browser = None
 
     session = requests.Session()
     session.headers.update({
@@ -168,10 +196,15 @@ def _attempt_login_with_pydoll(base_url: str, username: str, password: str, user
     return session
   except Exception as e:
     logger.error(f"pydoll automation failed: {e}")
+    if browser is not None:
+      try:
+        await browser.stop()
+      except Exception:
+        pass
     return None
 
 
-def login_and_get_session(url: str, username: str, password: str, user_agent: Optional[str] = None) -> requests.Session:
+async def login_and_get_session(url: str, username: str, password: str, user_agent: Optional[str] = None) -> requests.Session:
   """
   Attempt to obtain a logged-in requests.Session using (1) pydoll automation if available,
   otherwise (2) curl-based HTML fetch and cookie aggregation to bypass Cloudflare and submit login.
@@ -183,7 +216,7 @@ def login_and_get_session(url: str, username: str, password: str, user_agent: Op
     )
 
   # First try pydoll if present
-  session = _attempt_login_with_pydoll(url, username, password, user_agent)
+  session = await _attempt_login_with_pydoll(url, username, password, user_agent)
   if session is not None:
     return session
 
@@ -191,13 +224,13 @@ def login_and_get_session(url: str, username: str, password: str, user_agent: Op
   return _attempt_login_with_curl(url, username, password, user_agent)
 
 
-def create_api_manager_with_cookies(url: str, username: str, password: str, user_agent: Optional[str] = None):
+async def create_api_manager_with_cookies(url: str, username: str, password: str, user_agent: Optional[str] = None):
   """
   Helper to create ApiManager with a logged-in session (cookies pre-set), using the strategies above.
   """
   from api import ApiManager  # Local import to avoid circular deps on import-time
 
-  session = login_and_get_session(url, username, password, user_agent)
+  session = await login_and_get_session(url, username, password, user_agent)
   api_manager = ApiManager(url)
   api_manager.session = session
   return api_manager

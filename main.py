@@ -3,6 +3,7 @@ import requests
 import os
 import dotenv
 import logging
+import asyncio
 
 from api import ApiManager, CsrfError, LoginError, CheckInError
 from requests.exceptions import JSONDecodeError
@@ -21,7 +22,7 @@ RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL").split(",") if os.getenv("RECEIVER_E
 
 logging.basicConfig(
   level=logging.INFO,
-  format="%(asctime)s - %(levelname)s - %(message)s"
+  format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
 )
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ def switch_url(results):
   return pick_one_best(results)
 
 
-def do_check_in(url):
+async def do_check_in(url):
   api_manager = ApiManager(url)
   try:
     result = api_manager.login(USERNAME, PASSWORD)
@@ -95,7 +96,7 @@ def do_check_in(url):
   except (CsrfError, LoginError, CheckInError) as e:
     if "403" in str(e):
       logger.warn("API 403 detected, falling back to pydoll login.")
-      fallback_manager = create_api_manager_with_cookies(url, USERNAME, PASSWORD)
+      fallback_manager = await create_api_manager_with_cookies(url, USERNAME, PASSWORD)
       result = fallback_manager.check_in()
       if result["ret"] == 0 and result["msg"] != "您似乎已经签到过了...":
         logger.error(result["msg"])
@@ -109,14 +110,17 @@ def do_check_in(url):
     else:
       raise
 
-def main():
+async def main():
   results = check_url_connection(API_URLS)
   best_result = pick_one_best(results)
   finished = False
   while not finished:
     try:
       best_result["used"] = True
-      success = do_check_in(best_result["url"])
+      success = await do_check_in(best_result["url"])
+      # success = True
+      # await create_api_manager_with_cookies(best_result["url"], USERNAME, PASSWORD)
+
       if success:
         logger.info("成功完成签到")
         finished = True
@@ -136,4 +140,4 @@ def main():
       finished = True
 
 if __name__ == "__main__":
-  main()
+  asyncio.run(main())
