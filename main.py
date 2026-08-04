@@ -341,6 +341,21 @@ def main():
             # ── Step 2: 登录 ──
             print("\n[Step 2] 开始登录...")
             page.goto(LOGIN_URL, wait_until="networkidle", timeout=30000)
+
+            # 等待 ALtcha 验证码自动验证完成（auto="onload"）
+            print("[Step 2] 等待 ALtcha 验证码...")
+            try:
+                page.wait_for_function(
+                    """() => {
+                        const altcha = document.querySelector('.altcha');
+                        return altcha && altcha.getAttribute('data-state') === 'verified';
+                    }""",
+                    timeout=30000
+                )
+                print("[Step 2] ✅ ALtcha 验证完成")
+            except Exception:
+                print("[Step 2] ⚠️ ALtcha 等待超时，尝试继续...")
+
             save_page_state(page, "step2_login_page")
 
             # 等待表单就绪，避免页面 JS 尚未初始化完成导致 fill 竞态
@@ -374,27 +389,45 @@ def main():
             print(f"[Step 2] 已填写: {CORDCLOUD_EMAIL}")
             results.append(f"[Step 2] 填写登录表单: {CORDCLOUD_EMAIL}")
 
-            # 点击登录按钮，记录触发时间用于过滤历史邮件
+            # 点击登录按钮（触发 AJAX login() 函数）
+            # AJAX 返回：
+            #   ret==1 → 弹窗 → 500ms后 location.href='/user'
+            #   ret==2 → 弹窗 → 500ms后 location.href='/auth/login/2fa?token=...'
+            #   其他   → 弹窗显示错误，留在当前页
             login_click_time = time.time()
             page.click("#login")
-            print(f"[Step 2] 已点击登录 (触发时间: {time.strftime('%H:%M:%S', time.localtime(login_click_time))})，等待响应...")
-            time.sleep(3)
+            print(f"[Step 2] 已点击登录 (触发时间: {time.strftime('%H:%M:%S', time.localtime(login_click_time))})，等待 AJAX 响应...")
+
+            # 等待 JS 重定向：优先检测跳转到 /user（登录成功），其次 /2fa（需要二步验证）
+            redirected = False
+            for label, pattern, timeout_s in [
+                ("登录成功→/user", "**/user**", 15),
+                ("二步验证→/2fa", "**/2fa**", 10),
+            ]:
+                try:
+                    page.wait_for_url(pattern, timeout=timeout_s * 1000)
+                    print(f"[Step 2] ✅ 检测到跳转: {label}")
+                    redirected = True
+                    break
+                except Exception:
+                    continue
+
+            # 兜底：短暂等待后再次检查 URL（某些情况下 wait_for_url 可能错过）
+            if not redirected:
+                page.wait_for_timeout(2000)
+                if "/user" in page.url or "/2fa" in page.url:
+                    redirected = True
 
             current_url = page.url
             print(f"[Step 2] 当前 URL: {current_url}")
             save_page_state(page, "step3_after_login_click")
 
-            # ── 检测 2FA（URL + 输入框双重确认） ──
+            # ── 检测 2FA ──
             in_2fa = ("/2fa" in current_url or "/auth/login/2fa" in current_url)
-            if not in_2fa:
-                # 降级：检查 #code 输入框是否存在
-                try:
-                    in_2fa = page.locator("#code").is_visible()
-                except Exception:
-                    pass
 
             if in_2fa:
                 print(f"[Step 2] 🔐 检测到 2FA 页面")
+                save_page_state(page, "step3_2fa_page")
                 print("[Step 2] 正在从 POP3 收取验证码...")
 
                 code, error = fetch_latest_verification_code(timeout_seconds=90, since_time=login_click_time)
@@ -402,21 +435,39 @@ def main():
                     print(f"[Step 2] ❌ {error}")
                     return
 
-                # 填写验证码到 #code 输入框 (input#code, maxlength=6, pattern=[0-9]*)
-                try:
-                    page.locator("#code").fill(code)
-                    print(f"[Step 2] 已填写验证码: {_mask_code(code)}")
-                except Exception:
-                    print(f"[Step 2] ⚠️ 未找到 #code 输入框")
-                    return
+                # 填写验证码：尝试多种选择器（页面结构可能变化）
+                code_filled = False
+                for selector in ["#code", "input[name='code']", "input[type='text']"]:
+                    try:
+                        code_input = page.locator(selector).first
+                        if code_input.is_visible():
+                            code_input.fill(code)
+                            code_filled = True
+                            print(f"[Step 2] 已填写验证码 (selector={selector}): {_mask_code(code)}")
+                            break
+                    except Exception:
+                        continue
+                if not code_filled:
+                    print(f"[Step 2] ⚠️ 未找到验证码输入框，尝试继续...")
 
-                # 提交 2FA：按钮 #btn-verify (type=submit, text="确认验证")
-                page.locator("#btn-verify").click()
+                # 提交 2FA：尝试多种选择器
+                verify_clicked = False
+                for selector in ["#btn-verify", "button:has-text('验证')", "button:has-text('确认')", "button[type='submit']"]:
+                    try:
+                        verify_btn = page.locator(selector).first
+                        if verify_btn.is_visible():
+                            verify_btn.click()
+                            verify_clicked = True
+                            print(f"[Step 2] 已点击验证按钮 (selector={selector})")
+                            break
+                    except Exception:
+                        continue
+                if not verify_clicked:
+                    print("[Step 2] ⚠️ 未找到验证按钮，尝试继续...")
+
                 print("[Step 2] 已提交验证，等待响应...")
 
                 # 等待结果：成功则跳转到 /user，失败则弹窗 #msg
-                # JS 逻辑: ret===1 → #msg 弹窗 → 500ms 后 location.href='/user'
-                #          ret!==1 → #msg 弹窗显示错误，留在当前页
                 try:
                     page.wait_for_url("**/user**", timeout=10000)
                     print("[Step 2] ✅ 2FA 验证成功，已跳转到用户页面")
@@ -433,86 +484,117 @@ def main():
                     except Exception:
                         pass
                     print("[Step 2] ⚠️ 2FA 提交后未跳转，状态未知")
-                    # 不 return，继续检查当前 URL
 
                 save_page_state(page, "step4_after_2fa")
             else:
-                print("[Step 2] 未检测到 2FA，等待登录跳转...")
-                time.sleep(3)
+                # 不在 2FA 页面 → 检查是否有错误弹窗（登录失败）
+                try:
+                    page.wait_for_timeout(1000)
+                    msg_el = page.locator("#msg")
+                    if msg_el.is_visible():
+                        error_msg = (msg_el.text_content() or "").strip()
+                        if error_msg:
+                            print(f"[Step 2] ❌ 登录错误: {error_msg}")
+                            results.append(f"[Step 2] 登录错误: {error_msg}")
+                            return
+                except Exception:
+                    pass
+
+                # 也不在 /user → 可能登录异常
+                print(f"[Step 2] ⚠️ 登录后未跳转，当前: {current_url}")
+                results.append(f"[Step 2] 登录后未跳转到 /user，当前: {current_url}")
 
             current_url = page.url
-
-            # 二次确认：检查 #msg 弹窗是否有遗留错误
-            try:
-                msg_el = page.locator("#msg")
-                if msg_el.is_visible():
-                    error_msg = (msg_el.text_content() or "").strip()
-                    if error_msg:
-                        print(f"[Step 2] ❌ 登录错误: {error_msg}")
-                        return
-            except Exception:
-                pass
 
             if "/user" in current_url or "/user/" in current_url:
                 print("[Step 2] ✅ 登录成功！")
                 results.append("[Step 2] 登录成功")
-            else:
+            elif "/2fa" not in current_url:
                 print(f"[Step 2] ⚠️ 登录后 URL: {current_url}，继续尝试...")
                 results.append(f"[Step 2] 登录后未跳转到 /user，当前: {current_url}")
 
         # ── Step 3: 每日签到 ──
         print("\n[Step 3] 查找每日签到...")
         page.goto(USER_URL, wait_until="networkidle", timeout=30000)
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(2000)  # 多等一会让用户页面 JS 初始化
         save_page_state(page, "step5_user_checkin")
 
-        # 签到按钮位于 #checkin-btn 容器内
-        # 未签到: <button id="checkin">签到</button>
-        # 已签到: <button disabled>已签到</button> (无 id)
-        try:
-            checkin_btn = page.locator("#checkin-btn button")
-            if not checkin_btn.is_visible():
-                print("[Step 3] ⚠️ 未找到签到按钮，页面结构可能有变")
-                results.append("[Step 3] 未找到签到按钮")
-            else:
-                is_disabled = checkin_btn.is_disabled()
-                btn_text = (checkin_btn.text_content() or "").strip()
-                if is_disabled or "已签到" in btn_text:
-                    # 提取上次签到时间（<p>上次：2026-05-12 15:09:48</p>）
+        # 签到按钮：尝试多种选择器（页面结构可能变化）
+        checkin_selectors = [
+            "#checkin-btn button",       # 旧结构：容器内按钮
+            "#checkin",                  # 直接 ID
+            "button:has-text('签到')",    # 文字匹配
+            "button:has-text('每日签到')", # 备选文字
+        ]
+        checkin_btn = None
+        for selector in checkin_selectors:
+            try:
+                btn = page.locator(selector).first
+                if btn.is_visible():
+                    # 过滤掉不相关的按钮（如页面导航中的）
+                    btn_text = (btn.text_content() or "").strip()
+                    if any(kw in btn_text for kw in ("签到", "checkin", "Checkin")):
+                        checkin_btn = btn
+                        print(f"[Step 3] 找到签到按钮 (selector={selector}): '{btn_text}'")
+                        break
+            except Exception:
+                continue
+
+        if checkin_btn is None:
+            print("[Step 3] ⚠️ 未找到签到按钮，页面结构可能有变")
+            results.append("[Step 3] 未找到签到按钮")
+        else:
+            is_disabled = checkin_btn.is_disabled()
+            btn_text = (checkin_btn.text_content() or "").strip()
+            if is_disabled or "已签到" in btn_text:
+                # 提取上次签到时间
+                last_time_text = ""
+                for last_sel in ["p:has-text('上次')", "span:has-text('上次')", "*:has-text('上次')"]:
                     try:
-                        last_el = page.locator("p:has-text('上次')").first
+                        last_el = page.locator(last_sel).first
                         if last_el.is_visible():
                             last_time_text = (last_el.text_content() or "").strip()
-                            print(f"[Step 3] 今日已签到，{last_time_text}")
-                            results.append(f"[Step 3] 今日已签到，{last_time_text}")
-                        else:
-                            print(f"[Step 3] 今日已签到")
-                            results.append("[Step 3] 今日已签到")
+                            if last_time_text:
+                                break
                     except Exception:
-                        print(f"[Step 3] 今日已签到")
-                        results.append("[Step 3] 今日已签到")
+                        continue
+                if last_time_text:
+                    print(f"[Step 3] 今日已签到，{last_time_text}")
+                    results.append(f"[Step 3] 今日已签到，{last_time_text}")
                 else:
-                    print(f"[Step 3] 点击签到按钮: '{btn_text}'")
-                    checkin_btn.click()
-                    time.sleep(2)
+                    print(f"[Step 3] 今日已签到")
+                    results.append("[Step 3] 今日已签到")
+            else:
+                print(f"[Step 3] 点击签到按钮: '{btn_text}'")
+                checkin_btn.click()
+                page.wait_for_timeout(2000)
 
-                    # 检查签到结果: #checkin-msg 内联消息
-                    checkin_msg = ""
+                # 检查签到结果：尝试多种选择器
+                checkin_msg = ""
+                for msg_sel in ["#checkin-msg", ".checkin-msg", ".alert", "#msg"]:
                     try:
-                        msg_el = page.locator("#checkin-msg")
+                        msg_el = page.locator(msg_sel).first
                         if msg_el.is_visible():
-                            checkin_msg = (msg_el.text_content() or "").strip()
-                            if checkin_msg:
-                                print(f"[Step 3] 签到结果: {checkin_msg}")
+                            txt = (msg_el.text_content() or "").strip()
+                            if txt and len(txt) < 200:  # 合理长度的消息
+                                checkin_msg = txt
+                                print(f"[Step 3] 签到结果 ({msg_sel}): {checkin_msg}")
+                                break
+                    except Exception:
+                        continue
+                if not checkin_msg:
+                    # 检查按钮文字是否变化（已签到）
+                    try:
+                        new_text = (checkin_btn.text_content() or "").strip()
+                        if new_text != btn_text:
+                            checkin_msg = f"按钮文字变化: {new_text}"
+                            print(f"[Step 3] {checkin_msg}")
                     except Exception:
                         pass
-                    results.append(f"[Step 3] 签到完成: {checkin_msg or '已执行'}")
+                results.append(f"[Step 3] 签到完成: {checkin_msg or '已执行'}")
 
-            print("[Step 3] ✅ 签到操作完成")
-            checkin_screenshot = save_page_state(page, "step6_after_checkin")
-        except Exception as e:
-            print(f"[Step 3] ⚠️ 签到操作异常: {e}")
-            checkin_screenshot = None
+        print("[Step 3] ✅ 签到操作完成")
+        checkin_screenshot = save_page_state(page, "step6_after_checkin")
 
         # ── 发送结果邮件 ──
         now = time.strftime("%Y-%m-%d %H:%M:%S")
