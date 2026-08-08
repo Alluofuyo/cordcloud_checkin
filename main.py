@@ -367,11 +367,11 @@ def main():
             # 先点击聚焦，确保页面 JS 的 autofocus/select-all 已完成
             email_input.click()
             page.wait_for_timeout(500)
-            email_input.fill(CORDCLOUD_EMAIL)
+            email_input.fill(CORDCLOUD_EMAIL, force=True)
 
             passwd_input.click()
             page.wait_for_timeout(500)
-            passwd_input.fill(CORDCLOUD_PASSWORD)
+            passwd_input.fill(CORDCLOUD_PASSWORD, force=True)
 
             # 验证填入的值是否正确（防止全选/清空导致填入失败）
             filled_email = email_input.input_value()
@@ -379,7 +379,7 @@ def main():
                 print(f"[Step 2] ⚠️ 邮箱填入不匹配 (期望={CORDCLOUD_EMAIL}, 实际={filled_email})，重试...")
                 email_input.click()
                 page.wait_for_timeout(300)
-                email_input.fill(CORDCLOUD_EMAIL)
+                email_input.fill(CORDCLOUD_EMAIL, force=True)
                 filled_email = email_input.input_value()
                 if filled_email != CORDCLOUD_EMAIL:
                     print(f"[Step 2] ❌ 邮箱重试仍失败: {filled_email}")
@@ -441,7 +441,7 @@ def main():
                     try:
                         code_input = page.locator(selector).first
                         if code_input.is_visible():
-                            code_input.fill(code)
+                            code_input.fill(code, force=True)
                             code_filled = True
                             print(f"[Step 2] 已填写验证码 (selector={selector}): {_mask_code(code)}")
                             break
