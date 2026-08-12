@@ -4,11 +4,16 @@ CordCloud Auto Login + Daily Check-in
 """
 
 import os
+import sys
 import re
 import time
 import poplib
 import smtplib
 import email
+
+# Windows 中文环境终端默认 GBK，无法输出 emoji，强制 UTF-8
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 from email.header import decode_header
 from email.utils import parsedate_to_datetime, formatdate
 from email.mime.text import MIMEText
