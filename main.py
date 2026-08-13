@@ -370,11 +370,12 @@ def main():
             passwd_input.wait_for(state="visible", timeout=10000)
 
             # 先点击聚焦，确保页面 JS 的 autofocus/select-all 已完成
-            email_input.click()
+            # force=True 绕过 pointer-events 检查（输入框中心可能被 <I> 图标覆盖）
+            email_input.click(force=True)
             page.wait_for_timeout(500)
             email_input.fill(CORDCLOUD_EMAIL, force=True)
 
-            passwd_input.click()
+            passwd_input.click(force=True)
             page.wait_for_timeout(500)
             passwd_input.fill(CORDCLOUD_PASSWORD, force=True)
 
@@ -382,7 +383,7 @@ def main():
             filled_email = email_input.input_value()
             if filled_email != CORDCLOUD_EMAIL:
                 print(f"[Step 2] ⚠️ 邮箱填入不匹配 (期望={CORDCLOUD_EMAIL}, 实际={filled_email})，重试...")
-                email_input.click()
+                email_input.click(force=True)
                 page.wait_for_timeout(300)
                 email_input.fill(CORDCLOUD_EMAIL, force=True)
                 filled_email = email_input.input_value()
